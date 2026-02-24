@@ -4,28 +4,15 @@
 (defn ensure-schema!
   "Creates the events and todos tables if they don't exist."
   [ds]
+  ;; Minimal schema: only ordering, dedup, and the EDN blob.
+  ;; All other event fields live inside `data`, so this table
+  ;; never needs a migration — new event fields are just EDN.
   (jdbc/execute! ds ["
     CREATE TABLE IF NOT EXISTS events (
       sequence_num INTEGER PRIMARY KEY AUTOINCREMENT,
       id TEXT NOT NULL UNIQUE,
-      event_type TEXT NOT NULL,
-      aggregate_type TEXT NOT NULL,
-      aggregate_id TEXT NOT NULL,
-      data TEXT NOT NULL,
-      timestamp TEXT NOT NULL,
-      tx_id TEXT NOT NULL,
-      user_id TEXT,
-      version INTEGER NOT NULL DEFAULT 1
+      data TEXT NOT NULL
     )"])
-  (jdbc/execute! ds ["
-    CREATE INDEX IF NOT EXISTS idx_events_aggregate
-    ON events(aggregate_type, aggregate_id)"])
-  (jdbc/execute! ds ["
-    CREATE INDEX IF NOT EXISTS idx_events_timestamp
-    ON events(timestamp)"])
-  (jdbc/execute! ds ["
-    CREATE INDEX IF NOT EXISTS idx_events_tx
-    ON events(tx_id)"])
   (jdbc/execute! ds ["
     CREATE TABLE IF NOT EXISTS todos (
       id TEXT PRIMARY KEY,

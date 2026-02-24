@@ -10,5 +10,5 @@
    :event/aggregate aggregate
    :event/aggregate-id aggregate-id
    :event/data data
-   :event/timestamp (java.time.Instant/now)
+   :event/timestamp (java.util.Date.)
    :event/version 1})
