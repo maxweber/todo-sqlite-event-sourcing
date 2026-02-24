@@ -3,7 +3,8 @@
             [next.jdbc.result-set :as rs]
             [honey.sql :as sql]
             [app.part :as part]
-            [app.commands.todo :as cmd]))
+            [app.commands.todo :as cmd]
+            [app.projections.todo :as proj]))
 
 (defn query-todos
   [w]
@@ -36,4 +37,12 @@
                       prepare)}
    {:command/kind :command/delete-todo
     :command/fn (comp (part/execute-command! #'cmd/delete-todo)
-                      prepare)}])
+                      prepare)}
+   {:projection/event-type :todo/created
+    :projection/fn #'proj/todo-created}
+   {:projection/event-type :todo/completed
+    :projection/fn #'proj/todo-completed}
+   {:projection/event-type :todo/uncompleted
+    :projection/fn #'proj/todo-uncompleted}
+   {:projection/event-type :todo/deleted
+    :projection/fn #'proj/todo-deleted}])

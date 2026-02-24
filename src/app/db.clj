@@ -1,6 +1,7 @@
 (ns app.db
   "Simple database connection management."
-  (:require [next.jdbc :as jdbc]))
+  (:require [clojure.java.io :as io]
+            [next.jdbc :as jdbc]))
 
 (defonce datasource
   (atom nil))
@@ -12,6 +13,7 @@
   []
   (if-let [ds @datasource]
     ds
-    (let [ds (jdbc/get-datasource (str "jdbc:sqlite:" db-file))]
+    (let [_ (io/make-parents db-file)
+          ds (jdbc/get-datasource (str "jdbc:sqlite:" db-file))]
       (reset! datasource ds)
       ds)))

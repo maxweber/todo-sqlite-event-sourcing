@@ -24,7 +24,9 @@
                                          :event/tx-id tx-id
                                          :event/user-id user-id)
                                  events)
-          ds (:db/ds w)]
+          ds (:db/ds w)
+          projection-lookup (proj/build-projection-lookup
+                              ((:system/get-register w)))]
 
       (jdbc/with-transaction [tx ds]
         ;; 1. Store events
@@ -32,7 +34,8 @@
           (store/store-event! tx event))
 
         ;; 2. Apply projections
-        (let [stmts (vec (mapcat proj/apply-event events-with-meta))]
+        (let [stmts (vec (mapcat (partial proj/apply-event projection-lookup)
+                                 events-with-meta))]
           (doseq [stmt stmts]
             (jdbc/execute! tx (sql/format stmt)))))
 
@@ -53,25 +56,32 @@
    DESTRUCTIVE: Drops the todos table and rebuilds it from events.
    All operations happen in a single SQLite transaction.
 
-   Returns {:replayed count}."
-  [ds]
-  (jdbc/with-transaction [tx ds]
-    ;; Read events first
-    (let [events (store/get-all-events tx)]
+   Returns {:replayed count}.
 
-      ;; Drop and recreate todos table
-      (store/drop-todos-table! tx)
-      (jdbc/execute! tx ["
+   2-arity takes ds and projection-lookup directly.
+   1-arity derives projection-lookup from system register."
+  ([ds]
+   (let [get-register (requiring-resolve 'app.system.register/get-register)]
+     (replay-all-events! ds (proj/build-projection-lookup
+                              (get-register)))))
+  ([ds projection-lookup]
+   (jdbc/with-transaction [tx ds]
+     ;; Read events first
+     (let [events (store/get-all-events tx)]
+
+       ;; Drop and recreate todos table
+       (store/drop-todos-table! tx)
+       (jdbc/execute! tx ["
         CREATE TABLE IF NOT EXISTS todos (
           id TEXT PRIMARY KEY,
           text TEXT NOT NULL,
           completed INTEGER NOT NULL DEFAULT 0
         )"])
 
-      ;; Replay each event
-      (doseq [event events]
-        (let [stmts (proj/apply-event event)]
-          (doseq [stmt stmts]
-            (jdbc/execute! tx (sql/format stmt)))))
+       ;; Replay each event
+       (doseq [event events]
+         (let [stmts (proj/apply-event projection-lookup event)]
+           (doseq [stmt stmts]
+             (jdbc/execute! tx (sql/format stmt)))))
 
-      {:replayed (count events)})))
+       {:replayed (count events)}))))
