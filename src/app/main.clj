@@ -4,12 +4,13 @@
             [app.system.atom :as system-atom]
             [app.system.register :as system-register]
             [parts.httpkit.server :as httpkit]
-            )
+            [app.db :as db]
+            [app.db-schema :as schema])
   (:gen-class))
 
 (defn start!
   []
-  ;; (register-uncaught-exception-handler)
+  (schema/ensure-schema! (db/get-ds))
   (let [nrepl-server (nrepl/start-server
                        :bind "0.0.0.0"
                        :port 4000
@@ -23,14 +24,11 @@
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread.
                         (fn []
-                          (nrepl/stop-server nrepl-server))))
-    ))
+                          (nrepl/stop-server nrepl-server))))))
 
 (defn -main
   [& _args]
-  (start!)
-  )
+  (start!))
 
 (comment
-  (start!)
-  )
+  (start!))

@@ -1,8 +1,16 @@
 (ns app.commands.todo
   "Todo commands - pure functions that validate and return events."
   (:require [app.events.todo :as events]
-            [dbval.core :as d]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as rs]))
+
+(defn- find-todo
+  "Find a todo by id."
+  [ds id]
+  (jdbc/execute-one! ds
+    ["SELECT * FROM todos WHERE id = ?" (str id)]
+    {:builder-fn rs/as-unqualified-maps}))
 
 (defn add-todo
   "Command to create a new todo.
@@ -25,13 +33,13 @@
   "Command to toggle a todo's completion status."
   [w]
   (let [id (get-in w [:command :command/data :id])
-        db (:db/db w)
-        entity (d/entity db id)]
+        ds (:db/ds w)
+        todo (find-todo ds id)]
     (cond
-      (nil? entity)
+      (nil? todo)
       {:error "Todo not found"}
 
-      (:todo/completed entity)
+      (= 1 (:completed todo))
       {:ok [(events/todo-uncompleted id)]
        :aggregate-id id}
 
@@ -43,10 +51,10 @@
   "Command to delete a todo."
   [w]
   (let [id (get-in w [:command :command/data :id])
-        db (:db/db w)
-        entity (d/entity db id)]
+        ds (:db/ds w)
+        todo (find-todo ds id)]
     (cond
-      (nil? entity)
+      (nil? todo)
       {:error "Todo not found"}
 
       :else

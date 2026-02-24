@@ -3,7 +3,7 @@
   (:require [app.projections.todo :as todo-proj]))
 
 (defn apply-event
-  "Route event to appropriate projection. Returns dbval tx-data."
+  "Route event to appropriate projection. Returns honeysql maps."
   [event]
   (case (:event/aggregate event)
     :todo (todo-proj/project event)

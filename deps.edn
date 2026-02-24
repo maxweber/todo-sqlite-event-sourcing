@@ -10,8 +10,9 @@
   hiccup/hiccup {:mvn/version "2.0.0"}
   ring/ring-core {:mvn/version "1.15.3"}
   co.deps/ring-etag-middleware {:mvn/version "0.2.1"}
-  dbval/dbval {:git/url "git@github.com:maxweber/dbval.git"
-               :sha "105e996ed0b95abeebc55e90e8a88044a99f1f9d"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.3.955"}
+  com.github.seancorfield/honeysql {:mvn/version "2.6.1230"}
+  org.xerial/sqlite-jdbc {:mvn/version "3.47.1.0"}
   simplemono.parts/replicant {:git/url "https://github.com/simplemono/parts.git"
                               :sha "e14947ec42e252b871ec0b451bd66a7045884991"
                               :deps/root "replicant"}

@@ -1,29 +1,28 @@
 (ns app.todo
-  (:require [dbval.core :as d]
+  (:require [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as rs]
+            [honey.sql :as sql]
             [app.part :as part]
             [app.commands.todo :as cmd]))
 
 (defn query-todos
   [w]
-  (let [todos (d/q '[:find ?e ?text ?completed
-                     :where
-                     [?e :todo/text ?text]
-                     [?e :todo/completed ?completed]]
-                   (:db/db w))]
+  (let [rows (jdbc/execute! (:db/ds w)
+               (sql/format {:select [:id :text :completed]
+                            :from [:todos]})
+               {:builder-fn rs/as-unqualified-maps})]
     (assoc w
            :query/result
-           {:todos (mapv (fn [[id text completed]]
-                           {:id id
-                            :text text
-                            :completed completed})
-                         todos)})))
+           {:todos (mapv (fn [row]
+                           {:id (parse-uuid (:id row))
+                            :text (:text row)
+                            :completed (= 1 (:completed row))})
+                         rows)})))
 
 (defn prepare
-  "Prepare world-map with db connection."
+  "Prepare world-map with datasource."
   [w]
-  (-> w
-      (part/add-con)
-      (part/add-db)))
+  (part/add-ds w))
 
 (def register
   [{:query/kind :query/todos

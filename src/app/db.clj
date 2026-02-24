@@ -1,19 +1,17 @@
 (ns app.db
   "Simple database connection management."
-  (:require [dbval.core :as d]
-            [app.db-schema :as schema]))
+  (:require [next.jdbc :as jdbc]))
 
-(defonce connection
+(defonce datasource
   (atom nil))
 
 (def db-file "data/db.db")
 
-(defn get-conn
-  "Gets or creates the database connection."
+(defn get-ds
+  "Gets or creates the datasource."
   []
-  (if-let [c @connection]
-    c
-    (let [c (d/create-conn schema/schema
-                           {:db-file db-file})]
-      (reset! connection c)
-      c)))
+  (if-let [ds @datasource]
+    ds
+    (let [ds (jdbc/get-datasource (str "jdbc:sqlite:" db-file))]
+      (reset! datasource ds)
+      ds)))

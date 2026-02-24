@@ -22,24 +22,16 @@
            (hiccup-response response))
     w))
 
-(defn add-con
-  "Adds :db/con to the world map."
+(defn add-ds
+  "Adds :db/ds to the world map."
   [w]
-  (assoc w
-         :db/con
-         (db/get-conn)))
-
-(defn add-db
-  [w]
-  (assoc w
-         :db/db
-         @(:db/con w)))
+  (assoc w :db/ds (db/get-ds)))
 
 ;; Event sourcing
 
 (defn execute-command!
   "Executes a command function and processes resulting events.
-   Uses the dbval connection for both event storage and read-model updates.
+   Uses the datasource for both event storage and read-model updates.
    Returns a function that takes w and returns updated w."
   [command-fn]
   (fn [w]
