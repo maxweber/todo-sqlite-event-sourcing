@@ -5,8 +5,8 @@
 (defn apply-event
   "Route event to appropriate projection. Returns honeysql maps."
   [event]
-  (case (:event/aggregate event)
-    :todo (todo-proj/project event)
+  (case (namespace (:event/type event))
+    "todo" (todo-proj/project event)
     (do
-      (println "Unknown aggregate type:" (:event/aggregate event))
+      (println "Unknown event type namespace:" (:event/type event))
       [])))

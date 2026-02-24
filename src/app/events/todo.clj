@@ -7,8 +7,6 @@
   [id text]
   (events/make-event
    {:event/type :todo/created
-    :event/aggregate :todo
-    :event/aggregate-id id
     :event/data {:id id
                  :text text}}))
 
@@ -17,8 +15,6 @@
   [id]
   (events/make-event
    {:event/type :todo/completed
-    :event/aggregate :todo
-    :event/aggregate-id id
     :event/data {:id id}}))
 
 (defn todo-uncompleted
@@ -26,8 +22,6 @@
   [id]
   (events/make-event
    {:event/type :todo/uncompleted
-    :event/aggregate :todo
-    :event/aggregate-id id
     :event/data {:id id}}))
 
 (defn todo-deleted
@@ -35,6 +29,4 @@
   [id]
   (events/make-event
    {:event/type :todo/deleted
-    :event/aggregate :todo
-    :event/aggregate-id id
     :event/data {:id id}}))
