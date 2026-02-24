@@ -1,50 +1,76 @@
-# Todo example that uses dbval and event sourcing
+# Todo app with SQLite event sourcing
 
-An experiment to see how [dbval](https://github.com/maxweber/dbval) and event
-sourcing can be combined, here to realize a basic todo app.
+A basic todo app that combines event sourcing with SQLite. Events are the source
+of truth; the todos table is a read-model rebuilt from projections.
 
-Mostly written by Claude Code (Opus 4.5)
+Mostly written by Claude Code.
 
 ## Why
 
-I couldn't decide between a Datomic-like database and event sourcing, so I
-combined them 😄
-
-What I want is a database as a value, with Datalog and something like the
-Datomic entity API. However, after using Datomic for almost a decade, I've
-noticed that you end up facing challenges similar to those in relational
-databases: if your schema design is wrong, you need migrations. Tools like
-[schema-migration](https://github.com/simplemono/schema-migration) help, but a
-lot of migrations are scary to perform on a production database. If a migration
-did something wrong you need to write another one to fix it.
-
-I spent a lot of time thinking about why event sourcing feels different here.
-The best explanation I’ve found is that we tend to mix essential state with
-derived state, both in relational databases and in Datomic. Imagine an Excel
+Relational databases mix essential state with derived state. Imagine an Excel
 spreadsheet where cells containing formulas do not update automatically, and
 worse, they store the computed result instead of the formula itself. It's
 immediately obvious that this is something you want to avoid.
 
-This example combines a Datomic-like database library (dbval) with transactional
-event sourcing. The former serves as the read-model, while the events themselves
-are immutable values, stored forever. If you later discover that your read-model
-was derived incorrectly, you can simply delete it and replay all events to
-rebuild it, atomically, in a single transaction.
+Event sourcing separates the two. Events are immutable values, stored forever.
+The read-model (todos table) is derived state. If you later discover that a
+projection was wrong, you can delete the read-model and replay all events to
+rebuild it, atomically, in a single SQLite transaction.
 
-Another area where event sourcing shines is that it forces you to assign a
-meaning to an event. In contrast, transactions in relational databases, or even
-in Datomic, can be fairly arbitrary. Datomic transactions at least allow you to
-capture the "why", but events go one step further. External event streams, such
-as those from [a billing
+Events also force you to assign a meaning to what happened. Transactions in
+relational databases can be fairly arbitrary. External event streams, such as
+those from [a billing
 provider](https://developer.paddle.com/api-reference/events/list-events), make
 this especially clear: you can build your own read-model and keep it up to date
 simply by applying new events as they arrive.
 
+## Architecture
+
+### Event store
+
+A single SQLite table stores all events as EDN blobs. The schema is minimal
+(`sequence_num`, `id`, `data`) and never needs migration — new event fields are
+just EDN.
+
+### Data-driven registration
+
+Queries, commands, and projections are all registered as data maps in a single
+register:
+
+```clojure
+;; in app.todo
+(def register
+  [{:query/kind     :query/todos      :query/fn #'query-todos}
+   {:command/kind   :command/add-todo  :command/fn ...}
+   {:projection/event-kind :todo/created  :projection/fn #'proj/todo-created}
+   ...])
+```
+
+### Processing flow
+
+1. Browser sends a command via `/command`
+2. Command handler (pure function) returns `{:ok [events]}` or `{:error msg}`
+3. In a single SQLite transaction: events are stored, then projections update the
+   read-model
+4. Queries read from the projected todos table
+
+### Replay
+
+Rebuild the read-model from scratch at the REPL:
+
+```clojure
+(app.event-processor/replay-all-events! (app.db/get-ds))
+```
+
+This drops the todos table and replays every event through the projections,
+all in one transaction.
+
 ## Development
 
-Run:
-
     bin/dev-start
+
+Starts the JVM backend (nREPL on port 4000) and shadow-cljs (browser on port
+3001).
 
 ## Licence
 
