@@ -6,7 +6,7 @@
   "Create a todo-created event."
   [id text]
   (events/make-event
-   {:event/type :todo/created
+   {:event/kind :todo/created
     :event/data {:id id
                  :text text}}))
 
@@ -14,19 +14,19 @@
   "Create a todo-completed event."
   [id]
   (events/make-event
-   {:event/type :todo/completed
+   {:event/kind :todo/completed
     :event/data {:id id}}))
 
 (defn todo-uncompleted
   "Create a todo-uncompleted event."
   [id]
   (events/make-event
-   {:event/type :todo/uncompleted
+   {:event/kind :todo/uncompleted
     :event/data {:id id}}))
 
 (defn todo-deleted
   "Create a todo-deleted event."
   [id]
   (events/make-event
-   {:event/type :todo/deleted
+   {:event/kind :todo/deleted
     :event/data {:id id}}))

@@ -38,11 +38,11 @@
    {:command/kind :command/delete-todo
     :command/fn (comp (part/execute-command! #'cmd/delete-todo)
                       prepare)}
-   {:projection/event-type :todo/created
+   {:projection/event-kind :todo/created
     :projection/fn #'proj/todo-created}
-   {:projection/event-type :todo/completed
+   {:projection/event-kind :todo/completed
     :projection/fn #'proj/todo-completed}
-   {:projection/event-type :todo/uncompleted
+   {:projection/event-kind :todo/uncompleted
     :projection/fn #'proj/todo-uncompleted}
-   {:projection/event-type :todo/deleted
+   {:projection/event-kind :todo/deleted
     :projection/fn #'proj/todo-deleted}])
